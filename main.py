@@ -1,4 +1,66 @@
+def retorna_h(destino, node):
+    def h(n):
+        def caminhar(pos, visitados, distancia):
+            caminhos = node[pos]
+            distancias = []
+            visitados.add(pos)
+            if pos == destino:
+                return distancia
+            distancia += 1
+            for novo_pos in caminhos:
+                if novo_pos == destino:
+                    return distancia
+                if not novo_pos in visitados:
+                    try:
+                        distancias.append(caminhar(novo_pos, set(visitados), distancia))
+                    except:
+                        pass
+            return min(distancias)
 
+        try:
+            return caminhar(n, set(), 0)
+        except:
+            return None
+
+    return h
+
+def busca_melhor_caminho2(destino, node, meu_h):
+    def meu_f(n):
+        def calculo_f(pos, g_anterior):
+            valor = meu_h(pos)
+            if not valor:
+                raise Exception('Não há caminho para determinado destino')
+            return g_anterior + valor
+        pos = n
+        g = 0
+        path = [pos]
+        try:
+            while True:
+                menor = 999999
+                idx_menor = -1
+                _caminhos = node[pos]
+                for caminho in _caminhos:
+                    if caminho == destino:
+                        path.append(caminho)
+                        # break # >>>>>> bug
+                        return path  # >>>> bug fix
+                    if caminho in path:
+                        continue
+                    heuristica = calculo_f(caminho, g + 1)
+                    if heuristica < menor:
+                        menor = heuristica
+                        idx_menor = caminho
+                if idx_menor != -1:
+                    pos = idx_menor
+                    path.append(idx_menor)
+                    g += 1
+                    continue
+                else:
+                    break
+        except:
+            return []
+        return path
+    return meu_f
 
 
 class Nó:
@@ -100,6 +162,32 @@ class Problema:
         else:
             self.acoes[str(estado)] = lista_acoes
 
+    def busca_geral(self, meu_h):
+        no = Nó(self.estado_inicial, 0)
+        nos = [no]
+        self.todas_acoes(estado_inicial)
+        for acao in self.retorna_acoes(no.estado):
+            if len(nos) == 0:
+                return "Falha"
+            no = nos.pop(0)
+            if teste_objetivo == no.estado:
+                return no
+            filho = no.gera_filho(acao)
+            nos.append(filho)
+
+
+    def busca_melhor_primeiro(self, meu_h):
+        return self.busca_geral(meu_h)
+
+    def busca_estrela(self):
+        no = Nó(self.estado_inicial, 0)
+        meu_h = retorna_h(self.teste_objetivo, no)
+        busca_melhor_caminho2(self.teste_objetivo, no, meu_h)
+
+    def busca_gulosa(self):
+        no = Nó(self.estado_inicial, 0)
+        meu_h = retorna_h(self.teste_objetivo, no)
+        return self.busca_melhor_primeiro(meu_h)
     def busca_em_largura(self):
         no = Nó(self.estado_inicial, 0)
         if self.teste_objetivo == no:
